@@ -18,10 +18,8 @@ class ECC:
             print('choose a field modulus larger than 3')
             return
 
-        a = a % field_modulus
-        b = b % field_modulus
-        self.a = a
-        self.b = b
+        self.a = self.GF(a % field_modulus)
+        self.b = self.GF(b % field_modulus)
 
         if (self.isSingular(a, b)):
             print('selected curve is singular')
@@ -30,16 +28,15 @@ class ECC:
         self.pts = self.GF([[0, 0]])
 
         x = self.GF(np.arange(1, field_modulus))
-        x
         x2 = x**2
         # calculate all curve points
         for i in x:
             y2 = i**3 + self.GF(a)*i + self.GF(b)
-            indices = np.argwhere(x2 == y2)
-            indices = indices + 1  # x starts from 1, need to shift indices to match coords
+            indices = np.argwhere(x2 == y2) + 1 # x starts from 1, need to shift indices to match coords
             temp = np.full((len(indices), 2), i)
             temp[:, 1] = np.transpose(indices)
             self.pts = np.concatenate((self.pts, temp), 0)
+
 
         # generator point for public keys Q = k*P
         # Is considered to be a part of public key or even a part of curve definition.
@@ -50,7 +47,7 @@ class ECC:
         self.generator_P = self.pts[random.randint(0, len(self.pts)-1)]
 
         # private key
-        self.private_k = random.randint(1, 9999)
+        self.private_k = random.randint(1, 9999) # upper bound is an arbitrary number, higher -> more secure
 
         # public key
         self.public_Q = self.scalarMult(self.generator_P, self.private_k)
@@ -84,6 +81,7 @@ class ECC:
             stopCount = stopCount+1
 
         return ans
+
     # addition on eliptical curves
     def addPts(self, P, Q):
         ans = self.GF([0, 0])
@@ -101,9 +99,24 @@ class ECC:
         else:
            if (all(P == ans)):
                return ans
+           
+           #ans[0] = ( (self.GF(3)* P[0]**2 + self.a) / (self.GF(2)* P[1]) )**2                - self.GF(2)* P[0]
+           #ans[1] = ( (self.GF(3)* P[0]**2 + self.a) / (self.GF(2)* P[1]) ) * (P[0] - ans[0]) - P[1]
 
-           ans[0] = ( (3* P[0]**2 + self.GF(self.a)) / (2*P[1]) )**2 - 2*P[0]
-           ans[1] = ( (3* P[0]**2 + self.GF(self.a)) / (2*P[1]) ) * (P[0] - ans[0]) - P[1]
+           # TEMP debugging: catch a division by zero (shouldn't occur)
+           try:
+               ans[0] = ( (self.GF(3)* P[0]**2 + self.a) / (self.GF(2)* P[1]) )**2                - self.GF(2)* P[0]
+               ans[1] = ( (self.GF(3)* P[0]**2 + self.a) / (self.GF(2)* P[1]) ) * (P[0] - ans[0]) - P[1]
+           except:
+               print('ans ', ans)
+               print('P ', P)
+               print('divisor ', self.GF(2)* P[1])
+
+        # TEMP debugging: occasionaly the result of point addition is outside the EC group
+        if not (ans.tolist() in self.pts.tolist()):
+            print('P ', P)
+            print('Q ', Q)
+            print('ans ', ans)
 
         return ans
     
