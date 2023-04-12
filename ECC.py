@@ -27,12 +27,12 @@ class ECC:
 
         self.pts = self.GF([[0, 0]])
 
-        x = self.GF(np.arange(1, field_modulus))
+        x = self.GF(np.arange(0, field_modulus)) 
         x2 = x**2
         # calculate all curve points
         for i in x:
-            y2 = i**3 + self.GF(a)*i + self.GF(b)
-            indices = np.argwhere(x2 == y2) + 1 # x starts from 1, need to shift indices to match coords
+            y2 = i**3 + self.a*i + self.b
+            indices = np.argwhere(x2 == y2)
             temp = np.full((len(indices), 2), i)
             temp[:, 1] = np.transpose(indices)
             self.pts = np.concatenate((self.pts, temp), 0)
@@ -97,22 +97,15 @@ class ECC:
             ans[0] = ( (Q[1] - P[1]) / (Q[0] - P[0]) )**2 - P[0] - Q[0]
             ans[1] = ( (Q[1] - P[1]) / (Q[0] - P[0]) ) * (P[0] - ans[0]) - P[1]
         else:
-           if (all(P == ans)):
+           divisor = self.GF(2)* P[1]
+           if (divisor == 0):
                return ans
-           
-           #ans[0] = ( (self.GF(3)* P[0]**2 + self.a) / (self.GF(2)* P[1]) )**2                - self.GF(2)* P[0]
-           #ans[1] = ( (self.GF(3)* P[0]**2 + self.a) / (self.GF(2)* P[1]) ) * (P[0] - ans[0]) - P[1]
 
-           # TEMP debugging: catch a division by zero (shouldn't occur)
-           try:
-               ans[0] = ( (self.GF(3)* P[0]**2 + self.a) / (self.GF(2)* P[1]) )**2                - self.GF(2)* P[0]
-               ans[1] = ( (self.GF(3)* P[0]**2 + self.a) / (self.GF(2)* P[1]) ) * (P[0] - ans[0]) - P[1]
-           except:
-               print('ans ', ans)
-               print('P ', P)
-               print('divisor ', self.GF(2)* P[1])
+           ans[0] = ( (self.GF(3)* P[0]**2 + self.a) / divisor )**2 - self.GF(2)* P[0]
+           ans[1] = ( (self.GF(3)* P[0]**2 + self.a) / divisor ) * (P[0] - ans[0]) - P[1]
 
         # TEMP debugging: occasionaly the result of point addition is outside the EC group
+        # this should be fixed now, delete soon
         if not (ans.tolist() in self.pts.tolist()):
             print('P ', P)
             print('Q ', Q)

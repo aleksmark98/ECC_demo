@@ -35,7 +35,7 @@ for point in Alice.pts:
         print("is C2 in pts", C2 in Alice.pts)
         print('decrypted message: ',decrypted_message)
 
-string_message = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+string_message = string.printable() # all printable characters
 encrypted_string = Alice.encrypt_string_message(string_message, Bob.public_Q)
 
 with open("encrypted_text.txt", "w") as f:
